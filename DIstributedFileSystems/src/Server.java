@@ -65,7 +65,7 @@ public class Server {
                     Boolean flag = futureCreate.get();
                    
                     if (flag) {
-                        out.writeUTF("File Successfully Created");
+                        out.writeUTF("File is created!");
                     } else {
                         out.writeUTF("File Not Created");
                     }
@@ -120,27 +120,32 @@ public class Server {
 	     }
     }
     
-    @SuppressWarnings("unchecked")
-	public class HEARTBEATProcess implements Runnable{
+    public class HEARTBEATProcess implements Runnable{
     	@Override
         public void run(){
 	    	try {
 	    		while(true){
-	    			Thread.sleep(2000);
-			    	String MetaDataServer = prop.getProperty("metaserver");
-			    	int port = Integer.valueOf(prop.getProperty("metaport"));
-			        Socket metadataServer = new Socket(MetaDataServer, port);
+	    			int sendTimer = Integer.valueOf(prop.getProperty("sendHBTimer"));
+	    			Thread.sleep(sendTimer*1000);
+			    	String MetaServerAdd = prop.getProperty("metaserver");
+			    	int port = Integer.valueOf(prop.getProperty("metaserverport"));
+			        Socket metadataServer = new Socket(MetaServerAdd, port);
 			        DataInputStream in = new DataInputStream(metadataServer.getInputStream());
 			        DataOutputStream out = new DataOutputStream(metadataServer.getOutputStream());
-			        ExecutorService pool = Executors.newFixedThreadPool(2);
-			        Callable<String> dirFilesCallable = new DirFiles(directoryPath);
-			        Future<String> futureDirFiles = pool.submit(dirFilesCallable);
-			        String content = futureDirFiles.get();
-			        String msg="HEARTBEAT:" + ServerID + ";" + content;
+			        File dir = new File(directoryPath);
+			        File[] listOfFiles = dir.listFiles();
+			        StringBuilder sb = new StringBuilder();
+			        for (int i = 0; i < listOfFiles.length; i++) {
+			            if (listOfFiles[i].isFile()) {
+			                sb.append(listOfFiles[i].getName());
+			                sb.append(",");
+			            }
+			        }
+			        String msg="HEARTBEAT:" + ServerID + ";" + sb;
 			        out.writeUTF(msg);
 			        //String msg = in.readUTF();
 			        System.out.println(msg);
-			        pool.shutdown();
+			        //pool.shutdown();
 			        in.close();
 			        out.close();
 			        metadataServer.close();

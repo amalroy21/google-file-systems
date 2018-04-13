@@ -1,9 +1,12 @@
 import java.io.*;
+import java.net.ConnectException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -24,6 +27,10 @@ public class MetaServer {
     private int serverPort;
     private Properties prop;
     private String clean;
+    private HashMap<Integer, Object> hbstatus;
+    
+    
+    
 
     public MetaServer(Properties properties, String serverID) throws IOException {
         this.soc = new ServerSocket(Integer.valueOf(properties.getProperty("metaserverport")));
@@ -49,7 +56,18 @@ public class MetaServer {
         //System.out.println("Starting Server " + ServerID);
         System.out.println("----------------------Meta Server Started---------------------------------");
         System.out.println("Waiting for client on port " +soc.getLocalPort() + "...");
-        System.out.println();
+        
+        
+        try {
+        	HeartBeatMonitor HBprocess = new HeartBeatMonitor(prop);
+            System.out.println("-------- Heart Beat Monitor Started--------");
+            for(String s:serverList){
+            	
+            }
+            new Thread(HBprocess).start();
+        }   catch(Exception ex) {
+            ex.printStackTrace();
+        }
         
         if("true".equalsIgnoreCase(clean)){
         	cleanDirectory(directoryPath);
@@ -65,13 +83,16 @@ public class MetaServer {
 
                 String msg = in.readUTF();
                 System.out.println("message received: " + msg + " from " + clientIP);
-                
+                /*
                 int clientID = Integer.parseInt(msg.split(",")[1]);
-                String fileName=msg.split(",")[5];
+                String fileName=msg.split(",")[5];*/
                
                 // To handle HEARTBEAT messages form servers
                 if(msg.contains("HEARTBEAT")){
-                	ServerStatus.put(1, false);
+                	Callable<String> metaServerProcess = new MetaServerProcess(msg,prop);
+                    Future<String> futureData = pool.submit(metaServerProcess);
+                    String content = futureData.get();
+                    out.writeUTF(content);
                 }
                 
                 // To handle READ request from Clients
@@ -94,13 +115,8 @@ public class MetaServer {
                     String content = futureData.get();
                     out.writeUTF(content);
                 }
-                else if(msg.contains("HEARTBEAT")) {
-                	Callable<String> metaServerProcess = new MetaServerProcess(msg,prop);
-                    Future<String> futureData = pool.submit(metaServerProcess);
-                    String content = futureData.get();
-                    out.writeUTF(content);
-                }
-                else    {
+                
+                else {
                     out.writeUTF("Operation not supported");
                 }
 
@@ -129,8 +145,5 @@ public class MetaServer {
 	        }
 	     }
     }
-    
-
-    
-    
 }
+   

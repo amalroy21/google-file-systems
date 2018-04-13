@@ -87,9 +87,9 @@ public class Client {
                 
                 while(j < clientInfo.noOfRequests) {
                     j++;
-                    Thread.sleep(2000);
-                    System.out.println("---------------------New Request------------------------------");
-                    System.out.println("Request No: " + j);
+                    Thread.sleep(5000);
+                    System.out.println("---------------------New Client Operation------------------------------");
+                    System.out.println("Operation No: " + j);
                     serverID = rand.nextInt(clientInfo.serverAddress.size());
                     operationID = rand.nextInt(3);
                     //operationID=0;
@@ -112,11 +112,9 @@ public class Client {
                     	continue;
                     }
                     System.out.println("Chunk Details :"+msg);
-                    if(operation.contains("READ")||operation.contains("WRITE")){
-                    	
+                    if(operation.contains("READ")){
                     	
                     	String[] chunkList=msg.split("\\|\\|");
-                    	
                     	int noofchunks=chunkList.length;
                     	String[][] chunkdetail=new String[noofchunks][3]; 
                     	i=0;
@@ -124,7 +122,6 @@ public class Client {
                     		System.out.println(s);
                     		chunkdetail[i]=s.split(",");
                     		i++;
-                    		
                     	}
                     	
                     	for(i=0;i<noofchunks;i++){
@@ -143,13 +140,41 @@ public class Client {
                             output.close();
                             sersoc.close();
                     	}
+                    
+                    }else if (operation.contains("WRITE")){
+                    		
+                    		String[] chunkList=msg.split("\\|\\|");
+	                    	int noofchunks=chunkList.length;
+	                    	String[][] chunkdetail=new String[noofchunks][3]; 
+	                    	i=0;
+	                    	for(String s:chunkList){
+	                    		System.out.println(s);
+	                    		chunkdetail[i]=s.split(",");
+	                    		i++;
+	                    	}
+	                    	
+	                    	for(i=0;i<noofchunks;i++){
+	                    		System.out.println(noofchunks);
+	                    		//fileID=Integer.parseInt(fileName.replace(".txt", ""));
+	                        	String fname = fileID+"_"+chunkdetail[i][2]+".txt";
+	                    		serID=Integer.parseInt(chunkdetail[i][1].replace("Server",""));
+	                    		System.out.println(serID);
+	                    		sersoc = new Socket(clientInfo.serverAddress.get(serID-1).trim(), clientInfo.serverport);
+	                    		output = new DataOutputStream(sersoc.getOutputStream());
+	                            input = new DataInputStream(sersoc.getInputStream());
+	
+	                            output.writeUTF("Client ID," + clientInfo.clientID + ",Operation," + operation +",File,"+ fname);
+	                            System.out.println(input.readUTF());
+	                            input.close();
+	                            output.close();
+	                            sersoc.close();
                     }
                     
                     
-                    
+                    }
                     metasoc.close();
                     input.close();
-                    System.out.println("File Successfully updated");
+                    System.out.println("Operation Successful!");
                    }
 
                     clientInfo.timestamp++;

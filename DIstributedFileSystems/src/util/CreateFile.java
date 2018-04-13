@@ -19,8 +19,8 @@ public class CreateFile implements Callable {
     public Boolean call()   {
         try {
         	System.out.println("Inside Create Filename="+fileName+" Dir-"+dir);
-        	int fileID=Integer.parseInt(fileName.replace(".txt", ""));
-        	File file = new File(dir + "/" + fileID+"_1.txt");
+        	//int fileID=Integer.parseInt(fileName.replace(".txt", ""));
+        	File file = new File(dir + "/" + fileName);
         	  
         	//Create new chunk
         	if (file.createNewFile()){

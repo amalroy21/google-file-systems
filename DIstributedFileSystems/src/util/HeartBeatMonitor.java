@@ -1,45 +1,75 @@
 package util;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 public class HeartBeatMonitor implements Runnable {
 
-private int DEFAULT_SAMPLING_PERIOD = 5; //seconds
-private String DEFAULT_NAME = "HeartbeatMonitor";
-private HashMap<Integer, Object> hbstatus; // <id, value>
+	private int RunPeriod = 1; //seconds
+	private String DEFAULT_NAME = "HeartbeatMonitor";
+	static HashMap<Integer, Object> hbstatus; // <id, value>
+	private int no_of_servers;
+	private int checkPeriod;
+	
+	public class ServerInfo{
+		private int id;
+		private String serverAddress ;
+	    private volatile int timestamp;
+	    private volatile Instant lastUpdatedTimeStamp;
+	    private volatile Boolean isRunning;
+	    private Map<String, Map> fileDetail;
+	
+	    public ServerInfo(int id, String address) {
+	        this.id = id;
+	        this.isRunning = false;
+	        this.timestamp=0;
+	        this.serverAddress = address;
+	        this.lastUpdatedTimeStamp = Instant.now();
+	        this.fileDetail = new LinkedHashMap<>();
+	    }
+	    
+	    public void serverHB(String file){
+	    	this.isRunning = true;
+	    	this.lastUpdatedTimeStamp = Instant.now();
+	    }
+	}
+	
+	public HeartBeatMonitor (Properties prop) {
+	  hbstatus = new HashMap<Integer,Object>();
+	  no_of_servers = Integer.valueOf(prop.getProperty("no_of_servers"));
+      for(int i=1;i<=no_of_servers;i++){
+      	ServerInfo SI = new ServerInfo(i, prop.getProperty("server"+i));
+      	hbstatus.put(i, SI);
+      }
+      this.checkPeriod = Integer.valueOf(prop.getProperty("HBcheckPeriod"));
+	}
 
-
-public HeartBeatMonitor () {
-  hbstatus = new HashMap<Integer,Object>();
-
-}
-
-
-private void collect() {
-    /** Here you should collect the data you want to send 
-        and store it in the hash
-    **/
-
-}
-
-public void sendData(){
-    /** Here you should send the data to the server. Use REST/SOAP/multicast messages, whatever you want/need/are forced to **/
-}
-
-public void run() {
-  System.out.println("Running " +  DEFAULT_NAME );
-  try {
-     while(true){
-        System.out.println("Thread: " + DEFAULT_NAME + ", " + "I'm alive");
-
-        this.collect();
-        this.sendData();
-        // Let the thread sleep for a while.
-        Thread.sleep(DEFAULT_SAMPLING_PERIOD * 1000);
-     }
- } catch (InterruptedException e) {
-     System.out.println("Thread " +  DEFAULT_NAME + " interrupted.");
- }
- System.out.println("Thread " +  DEFAULT_NAME + " exiting.");
-}
+	
+	public void run() {
+	  System.out.println("Running " +  DEFAULT_NAME );
+	  try {
+	     while(true){
+	    	for(int i=1;i<=no_of_servers;i++){
+	    		
+	    		ServerInfo SI=(ServerInfo) hbstatus.get(i);
+	    		Duration duration = Duration.between(SI.lastUpdatedTimeStamp,Instant.now());
+	    		//System.out.println(duration.toMillis());
+	    		if(duration.toMillis() >= (checkPeriod * 1000)){
+	    			System.out.println("Server Down"+SI.id);
+	    			SI.isRunning=false;
+	    		}
+	    	}
+	        Thread.sleep(RunPeriod * 1000);
+	     }
+	 } catch (InterruptedException e) {
+	     System.out.println("Thread " +  DEFAULT_NAME + " interrupted.");
+	 }
+	 System.out.println("Thread " +  DEFAULT_NAME + " exiting.");
+	}
 }

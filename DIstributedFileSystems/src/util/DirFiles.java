@@ -5,11 +5,9 @@ import java.util.concurrent.Callable;
 
 public class DirFiles implements Callable {
 	private String dirPath;
-    //private int serID;
 
     public DirFiles(String path)  {
         this.dirPath = path;
-       // this.serID=serID;
     }
 
     public String call()   {
@@ -24,10 +22,6 @@ public class DirFiles implements Callable {
             if (listOfFiles[i].isFile()) {
                 sb.append(listOfFiles[i].getName());
                 sb.append(",");
-                sb.append(listOfFiles[i].getTotalSpace());
-                sb.append(",");
-                sb.append(listOfFiles[i].lastModified());
-                sb.append("||");
             }
             
         }
